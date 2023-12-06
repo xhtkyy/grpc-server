@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Xhtkyy\GrpcServer;
 
 use Xhtkyy\GrpcServer\Listener\RegisterListener;
+use Xhtkyy\GrpcServer\Server\ServerStartListener;
 
 class ConfigProvider
 {
@@ -24,6 +25,7 @@ class ConfigProvider
             'commands' => [
             ],
             'listeners' => [
+                ServerStartListener::class
             ],
             'annotations' => [
                 'scan' => [
