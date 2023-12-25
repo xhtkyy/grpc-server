@@ -27,7 +27,7 @@ class RegisterReady
         $this->governanceManager = $container->get(DriverManager::class);
     }
 
-    public function handle(array $services, string $serverName = 'grpc'): ResponseInterface
+    public function handle(array $services, string $serverName = 'grpc'): \Psr\Http\Message\ResponseInterface
     {
         [$host, $port] = $this->getServers()[$serverName] ?? throw new InvalidArgumentException("Invalid server name");
         $driver = $this->governanceManager->get($this->config->get('grpc.register.driver', 'nacos-grpc'));
