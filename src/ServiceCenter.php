@@ -15,11 +15,13 @@ use Hyperf\HttpServer\Router\Router;
 use Hyperf\ServiceGovernance\ServiceManager;
 use Psr\Container\ContainerInterface;
 use Throwable;
+use Xhtkyy\GrpcServer\Server\Check\RegisterReady;
 
 class ServiceCenter
 {
     private ServiceManager $serviceManager;
     public array $config = [];
+    public array $services = [];
 
     /**
      * @throws Throwable
@@ -37,7 +39,8 @@ class ServiceCenter
      */
     public static function addServer(callable $callback): void
     {
-        $self = ApplicationContext::getContainer()->get(self::class);
+        $container = ApplicationContext::getContainer();
+        $self = $container->get(self::class);
         Router::addServer($self->config['server'] ?? 'grpc', function () use ($callback, $self) {
             //register reflection
             if ($self->config['reflection']['enable'] !== false) $self->register(ServerReflection::class, true);
@@ -46,6 +49,8 @@ class ServiceCenter
             //other service register
             $callback($self);
         });
+        Router::get("/ready", fn() => $container->get(RegisterReady::class)->handle($self->services, $self->config['server'] ?? 'grpc'));
+        Router::get('/live', fn() => '');
     }
 
     public function register(string $class, bool $only_route = false): self
@@ -76,11 +81,13 @@ class ServiceCenter
                 //rename
                 //todo config
                 $serviceName = current(explode('.', $serviceName)) . '.grpc';
-                $this->serviceManager->register($serviceName, '', [
+                $metadata = [
                     'protocol' => 'grpc',
                     'publishTo' => $publishTo ?: ($this->config['register']['driver'] ?? 'nacos-grpc'),
                     'server' => $this->config['server'] ?? 'grpc'
-                ]);
+                ];
+                $this->serviceManager->register($serviceName, '', $metadata);
+                $this->services[$serviceName] = $metadata;
             }
         }
         return $this;
